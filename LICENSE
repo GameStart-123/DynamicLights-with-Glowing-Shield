@@ -1,7 +1,7 @@
 The Lambda License
 
 Copyright (c) 2024 LambdAurora <email@lambdaurora.dev>
-
+Copyright (c) 2026 GameStart-123 (Derived Modified Version)
 
 # 0. Foreword
 
@@ -138,3 +138,22 @@ SOFTWARE.
 
 In case of a conflict between the Section 0 ("Foreword") and any other Section, the latter
 Section shall prevail.
+
+
+=============================================
+DERIVATIVE WORK ADDENDUM
+This project is a modified derivative work based on LambDynamicLights v26.1,
+licensed under The Lambda License from original author LambdAurora.
+
+1. Modifications made by GameStart-123:
+   - Adapted codebase to LambDynamicLights v26.1
+   - Added Glowing Shield dynamic lighting feature (main/offhand torch-level light emission)
+   - Fully retained all original shield vanilla mechanics and upstream dynamic lighting logic
+
+2. Compliance statement:
+   - This entire derivative work remains fully governed by The Lambda License;
+   - All modification records are tracked via Git commit history to satisfy clause 2.2 of the License;
+   - Original author LambdAurora is prominently credited in repository README and this license file, complying with clause 2.3;
+   - All binaries distribution rules of Section 3 of The Lambda License shall be strictly followed.
+
+This derivative compiled binaries are only for personal and small-circle friend private use, no public distribution of binaries is performed, so no written authorization request to the original author is required in accordance with Clause 3 of The Lambda License.

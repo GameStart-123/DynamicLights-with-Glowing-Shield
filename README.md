@@ -1,23 +1,25 @@
-## Modified LambDynamicLights Mod
-This repository is a secondary development based on the original open-source project **LambDynamicLights**.
+# DynamicLights with Glowing Shield
+Modified Derivative Mod of LambDynamicLights (Fabric 26.1)
 
-### Original Project Info
-- Original Repository: https://github.com/LambdAurora/LambDynamicLights
-- Original License: MIT License
+## Upstream Original Project
+- Mod Name: LambDynamicLights
 - Original Author: LambdAurora
+- Original Repository: https://github.com/LambdAurora/LambDynamicLights
+- Original License: **The Lambda License** (Full text preserved in root LICENSE file)
 
-### Modification Overview
-This customized version is adapted to **LambDynamicLights v26.1**, with one major new feature added:
-#### Glowing Shield
-1. Retains all vanilla shield's original functions, including blocking attacks, disabling projectile damage, and defending against sweeping edges.
-2. Equipped with dynamic lighting capability: when held in either the main hand or offhand, it emits ambient light just like a torch held in the left hand, perfectly integrating with the dynamic lighting system of LambDynamicLights.
+## Modification Content
+This version is forked and modified on LambDynamicLights v26.1:
+### New Feature: Glowing Shield
+1. Retains all vanilla shield functionality: block melee attacks, block projectiles, prevent sweep damage, normal durability consumption.
+2. Implements dynamic lighting: shield emits torch-like ambient light when held in main hand or offhand, integrated into the original dynamic lights system.
 
-### Compatibility
-- Target version: LambDynamicLights 26.1
-- Loader: Fabric Loader for Minecraft (consistent with the original mod)
+## License Compliance Statement
+1. This derivative work is fully licensed under **The Lambda License**, consistent with the upstream original project.
+2. Full unmodified license text from LambdAurora is stored in the root directory LICENSE file.
+3. All modifications are recorded in Git commit history to fulfill License clause 2.2.
+4. Original author LambdAurora is clearly credited as required by License clause 2.3.
+5. Any binary distribution of this mod must follow Section 3 of The Lambda License (require original author’s written approval before publishing binaries).
 
-### License Statement
-This derivative work continues to follow the **MIT License** of the original project.
-The original `LICENSE` file from the upstream repository is fully reserved. You are allowed to modify, distribute and use this project freely, as long as the copyright notice of the original author is preserved.
-
----
+## Important Reminder for Release
+If you intend to publish compiled JAR binaries to Modrinth / CurseForge or other platforms:
+You need to send a good-faith written request to the original author’s email for distribution approval. If no reply within 60 calendar days, implicit approval is granted per the license terms.
