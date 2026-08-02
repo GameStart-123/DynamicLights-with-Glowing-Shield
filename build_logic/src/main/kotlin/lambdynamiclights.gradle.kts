@@ -1,4 +1,4 @@
-import lambdynamiclights.Constants
+﻿import lambdynamiclights.Constants
 import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
@@ -82,3 +82,4 @@ publishing {
 		}
 	}
 }
+

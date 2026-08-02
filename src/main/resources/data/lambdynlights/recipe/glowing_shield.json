@@ -1,15 +1,11 @@
 {
-	"type": "minecraft:crafting_shaped",
+	"type": "minecraft:crafting_shapeless",
 	"category": "equipment",
-	"pattern": [
-		"T",
-		"S",
-		"T"
+	"ingredients": [
+		"minecraft:shield",
+		"minecraft:torch",
+		"minecraft:torch"
 	],
-	"key": {
-		"T": "minecraft:torch",
-		"S": "minecraft:shield"
-	},
 	"result": {
 		"id": "lambdynlights:glowing_shield"
 	}
