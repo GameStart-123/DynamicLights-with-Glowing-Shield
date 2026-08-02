@@ -1,5 +1,5 @@
 # DynamicLights with Glowing Shield
-Modified Derivative Mod of LambDynamicLights (Fabric 1.20.x)
+Modified Derivative Mod of LambDynamicLights (Fabric 26.1)
 
 ## Upstream Original Project
 - Mod Name: LambDynamicLights
