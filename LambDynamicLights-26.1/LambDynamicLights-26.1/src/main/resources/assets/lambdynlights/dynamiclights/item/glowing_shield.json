@@ -1,0 +1,9 @@
+{
+	"match": {
+		"items": [
+			"lambdynlights:glowing_shield"
+		]
+	},
+	"luminance": 14,
+	"water_sensitive": true
+}

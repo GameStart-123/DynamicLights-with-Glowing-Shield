@@ -1,0 +1,348 @@
+import com.modrinth.minotaur.dependencies.ModDependency
+import dev.lambdaurora.mcdev.api.McVersionLookup
+import dev.lambdaurora.mcdev.api.ModVersionDependency
+import dev.lambdaurora.mcdev.api.manifest.Nmt
+import dev.lambdaurora.mcdev.task.ConvertAccessWidenerToTransformer
+import dev.lambdaurora.mcdev.task.GenerateNeoForgeJiJDataTask
+import dev.lambdaurora.mcdev.task.packaging.PackageModrinthTask
+import lambdynamiclights.Constants
+import lambdynamiclights.Utils
+import lambdynamiclights.task.AdjustJarJarMetadataTask
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
+
+plugins {
+	id("lambdynamiclights")
+	`maven-publish`
+	id("com.gradleup.shadow").version("9.1.0")
+	id("com.modrinth.minotaur").version("2.+")
+	id("net.darkhax.curseforgegradle").version("1.1.+")
+}
+
+base.archivesName.set(Constants.NAME)
+
+logger.lifecycle("Preparing version ${version}...")
+lambdamcdev.setupActionsRefCheck()
+
+val fabricApiModules = listOf(
+	fabricApi.module("fabric-creative-tab-api-v1", libs.versions.fabric.api.get())!!,
+	fabricApi.module("fabric-lifecycle-events-v1", libs.versions.fabric.api.get())!!,
+	fabricApi.module("fabric-resource-loader-v1", libs.versions.fabric.api.get())!!,
+	fabricApi.module("fabric-resource-conditions-api-v1", libs.versions.fabric.api.get())!!
+)
+
+val neoforge: SourceSet by sourceSets.creating {
+	this.compileClasspath += sourceSets.main.get().compileClasspath
+	this.runtimeClasspath += sourceSets.main.get().runtimeClasspath
+}
+
+tasks.generateFmj.configure {
+	val fmj = this.fmj.get()
+		.withEntrypoints("main", "dev.lambdaurora.lambdynlights.item.LambDynLightsItems")
+		.withEntrypoints("yumi:client_init", "dev.lambdaurora.lambdynlights.LambDynLights::INSTANCE")
+		.withEntrypoints("lambdynlights:platform", "dev.lambdaurora.lambdynlights.platform.fabric.FabricPlatform")
+		.withEntrypoints("modmenu", "dev.lambdaurora.lambdynlights.LambDynLightsModMenu")
+		.withEntrypoints("sodium:config_api_user", "dev.lambdaurora.lambdynlights.compat.SodiumCompat")
+		.withAccessWidener("lambdynlights.accesswidener")
+		.withMixins("lambdynlights.mixins.json", "lambdynlights.lightsource.mixins.json")
+		.withDepend("${Constants.NAMESPACE}_api", ">=${version}")
+		.withDepend("spruceui", ">=${libs.versions.spruceui.get()}")
+		.withDepend("yumi_mc_core", ">=${libs.versions.yumi.mc.foundation.get()}")
+		.withRecommend("modmenu", ">=${libs.versions.modmenu.get()}")
+		.withBreak("optifabric", "*")
+		.withBreak("sodiumdynamiclights", "*")
+		.withBreak("ryoamiclights", "*")
+
+	fabricApiModules.forEach { module -> fmj.withDepend(module.name, ">=${module.version}") }
+}
+
+lambdamcdev {
+	manifests {
+		val fmj = this.fmj().get()
+
+		nmt {
+			fmj.copyTo(this)
+			withLoaderVersion("[2,)")
+			withYumiEntrypoints("yumi:client_init", "dev.lambdaurora.lambdynlights.LambDynLights::INSTANCE")
+			withYumiEntrypoints("lambdynlights:platform", "dev.lambdaurora.lambdynlights.platform.neoforge.NeoForgePlatform::INSTANCE")
+			withAccessTransformer("META-INF/accesstransformer.cfg")
+			withMixins("lambdynlights.mixins.json", "lambdynlights.lightsource.mixins.json")
+			withDepend(Constants.NAMESPACE + "_api", "[${version},)", Nmt.DependencySide.CLIENT)
+			withDepend("minecraft", project.property("neoforge_mc_constraints").toString())
+			withDepend("spruceui", "[${libs.versions.spruceui.get()},)", Nmt.DependencySide.CLIENT)
+			withDepend("yumi_mc_core", "[${libs.versions.yumi.mc.foundation.get()},)", Nmt.DependencySide.CLIENT)
+			withBreak("sodiumdynamiclights", "*", Nmt.DependencySide.CLIENT)
+			withBreak("ryoamiclights", "*", Nmt.DependencySide.CLIENT)
+			withCustom("\"sodium:config_api_user\"", "dev.lambdaurora.lambdynlights.compat.SodiumCompat")
+		}
+	}
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		name = "Terraformers"
+		url = uri("https://maven.terraformersmc.com/releases/")
+		content {
+			includeGroupAndSubgroups("com.terraformersmc")
+			includeGroup("dev.emi")
+		}
+	}
+	maven {
+		name = "Wispforest"
+		url = uri("https://maven.wispforest.io/releases")
+		content {
+			includeGroupAndSubgroups("io.wispforest")
+		}
+	}
+	maven {
+		name = "NeoForge"
+		url = uri("https://maven.neoforged.net/releases/")
+		content {
+			includeGroupAndSubgroups("net.neoforged")
+			includeGroupAndSubgroups("cpw.mods")
+		}
+	}
+	exclusiveContent {
+		filter {
+			includeGroupAndSubgroups("eu.pb4")
+		}
+
+		forRepository {
+			maven {
+				name = "Nucleoid"
+				url = uri("https://maven.nucleoid.xyz/releases")
+			}
+		}
+	}
+	exclusiveContent {
+		filter {
+			includeGroupAndSubgroups("net.caffeinemc")
+		}
+
+		forRepository {
+			maven {
+				url = uri("https://maven.caffeinemc.net/releases/")
+			}
+		}
+	}
+}
+
+loom {
+	accessWidenerPath = file("src/main/resources/lambdynlights.accesswidener")
+}
+
+dependencies {
+	api(project(":api"))
+	include(project(":api"))
+
+	implementation(libs.fabric.loader)
+	fabricApiModules.forEach { implementation(it) }
+	implementation(libs.yumi.mc.foundation)
+	include(libs.yumi.mc.foundation)
+
+	implementation(libs.nightconfig.core)
+	implementation(libs.nightconfig.toml)
+	implementation(libs.spruceui)
+	include(libs.spruceui)
+	implementation(libs.pridelib)
+	include(libs.pridelib)
+
+	compileOnly(libs.modmenu) {
+		this.isTransitive = false
+	}
+	/*modLocalRuntime(libs.modmenu) {
+		this.isTransitive = false
+	}*/
+
+	// Mod compatibility
+	compileOnly(libs.sodium.api)
+	compileOnly(libs.trinkets)
+	//modCompileOnly(libs.accessories)
+
+	shadow(libs.nightconfig.core)
+	shadow(libs.nightconfig.toml)
+
+	"neoforgeCompileOnly"(libs.neoforge.loader)
+	"neoforgeCompileOnly"(variantOf(libs.neoforge.api) { classifier("universal") })
+	"neoforgeImplementation"(sourceSets.main.get().output)
+}
+
+loom.runs.getByName("client") {
+	this.vmArg("-DMC_DEBUG_ENABLED")
+	this.vmArg("-DMC_DEBUG_HOTKEYS")
+}
+
+val convertAWtoAT by tasks.registering(ConvertAccessWidenerToTransformer::class) {
+	this.group = "generation"
+	this.input = loom.accessWidenerPath
+	this.output = project.layout.buildDirectory.get().file("generated/accesstransformer.cfg")
+}
+
+tasks.jar {
+	destinationDirectory.set(project.layout.buildDirectory.dir("devlibs"))
+	archiveClassifier.set("dev")
+}
+
+val generateJarJarMetadata by tasks.registering(GenerateNeoForgeJiJDataTask::class) {
+	val includeConfig = project.configurations.getByName("includeInternal");
+	this.from(includeConfig)
+	this.outputFile.set(
+		project.layout.buildDirectory
+			.asFile
+			.map(File::toPath)
+			.map { path -> path.resolve("generated/jarjar/metadata.preprocessed.json").toFile() }
+			.get()
+	)
+}
+
+val adjustJarJarMetadata by tasks.registering(AdjustJarJarMetadataTask::class) {
+	this.dependsOn(generateJarJarMetadata)
+	this.artifactGroup.set(project.group.toString())
+	this.jarJarMetadata.set(generateJarJarMetadata.flatMap { it.outputFile })
+	this.outputFile.set(
+		project.layout.buildDirectory
+			.asFile
+			.map(File::toPath)
+			.map { path -> path.resolve("generated/jarjar/metadata.json").toFile() }
+			.get()
+	)
+}
+
+tasks.shadowJar {
+	dependsOn(tasks.jar, adjustJarJarMetadata)
+	configurations = listOf(project.configurations["shadow"])
+	archiveClassifier.set("")
+	relocate("com.electronwill.nightconfig", "dev.lambdaurora.lambdynlights.shadow.nightconfig")
+
+	from(rootProject.file("LICENSE")) {
+		rename { "${it}_${Constants.NAME}" }
+	}
+
+	from(adjustJarJarMetadata.map { it.outputFile }) {
+		into("META-INF/jarjar")
+	}
+	from(neoforge.output)
+	from(convertAWtoAT) {
+		into("META-INF")
+	}
+}
+
+loom.nestJars(
+	tasks.shadowJar,
+	fileTree(tasks.processIncludeJars.get().outputDirectory)
+)
+
+tasks.named<Jar>("sourcesJar") {
+	this.from(neoforge.java.sourceDirectories)
+	this.from(neoforge.resources.sourceDirectories)
+	this.from(convertAWtoAT) {
+		into("META-INF")
+	}
+}
+
+val mainSourceSet = sourceSets.main.get()
+lambdamcdev.replaceArtifactInConfiguration(mainSourceSet.apiConfigurationName, tasks.shadowJar)
+lambdamcdev.replaceArtifactInConfiguration(mainSourceSet.runtimeElementsConfigurationName, tasks.shadowJar)
+
+val packageModrinth by tasks.registering(PackageModrinthTask::class) {
+	this.group = "publishing"
+	this.versionType.set(ldl.versionType())
+	this.versionName.set("${Constants.PRETTY_NAME} ${ldl.version()} (${McVersionLookup.getVersionTag(ldl.mcVersion())})")
+	this.gameVersions.set(ldl.compatibleMcVersions())
+	this.loaders.set(listOf("fabric", "quilt", "neoforge"))
+	this.dependencies.set(
+		listOf(
+			ModVersionDependency("P7dR8mSH", ModVersionDependency.Type.REQUIRED),
+			ModVersionDependency("reCfnRvJ", ModVersionDependency.Type.INCOMPATIBLE),
+			ModVersionDependency("PxQSWIcD", ModVersionDependency.Type.INCOMPATIBLE)
+		)
+	)
+	this.changelog.set(Utils.fetchChangelog(project))
+	this.readme.set(Utils.parseReadme(project))
+	this.files.setFrom(tasks.shadowJar)
+}
+
+modrinth {
+	projectId = project.property("modrinth_id") as String
+	versionName = "${Constants.PRETTY_NAME} ${ldl.version()} (${McVersionLookup.getVersionTag(ldl.mcVersion())})"
+	uploadFile.set(tasks.shadowJar)
+	loaders.set(listOf("fabric", "quilt", "neoforge"))
+	gameVersions.set(ldl.compatibleMcVersions())
+	versionType.set(ldl.versionType().toString())
+	syncBodyFrom.set(Utils.parseReadme(project))
+	dependencies.set(
+		listOf(
+			ModDependency("P7dR8mSH", "required"),
+			ModDependency("reCfnRvJ", "incompatible"),
+			ModDependency("PxQSWIcD", "incompatible")
+		)
+	)
+
+	// Changelog fetching
+	val changelogContent = Utils.fetchChangelog(project)
+
+	if (changelogContent != null) {
+		changelog.set(changelogContent)
+	} else {
+		afterEvaluate {
+			tasks.modrinth.get().isEnabled = false
+		}
+	}
+}
+
+tasks.register<TaskPublishCurseForge>("curseforge") {
+	this.group = "publishing"
+
+	val token = System.getenv("CURSEFORGE_TOKEN")
+	if (token != null) {
+		this.apiToken = token
+	} else {
+		this.isEnabled = false
+		return@register
+	}
+
+	// Changelog fetching
+	var changelogContent = Utils.fetchChangelog(project)
+
+	if (changelogContent != null) {
+		changelogContent = "Changelog:\n\n${changelogContent}"
+	} else {
+		this.isEnabled = false
+		return@register
+	}
+
+	val mainFile = upload(project.property("curseforge_id"), tasks.shadowJar)
+	mainFile.releaseType = ldl.versionType()
+	ldl.compatibleMcVersions().stream()
+		.map { McVersionLookup.getCurseForgeEquivalent(it) }
+		.forEach { mainFile.addGameVersion(it) }
+	mainFile.addModLoader("Fabric", "Quilt", "NeoForge")
+	mainFile.addJavaVersion("Java 25")
+	mainFile.addEnvironment("Client")
+
+	mainFile.displayName = "${Constants.PRETTY_NAME} ${ldl.version()} (${McVersionLookup.getVersionTag(ldl.mcVersion())})"
+	mainFile.addRequirement("fabric-api")
+	mainFile.addOptional("modmenu")
+	mainFile.addIncompatibility("optifabric")
+	mainFile.addIncompatibility("ryoamiclights")
+	mainFile.addIncompatibility("dynamiclights-reforged")
+
+	mainFile.changelogType = "markdown"
+	mainFile.changelog = changelogContent
+}
+
+// Configure the maven publication.
+publishing {
+	publications {
+		create<MavenPublication>("mavenJava") {
+			from(components["java"])
+
+			artifactId = "lambdynamiclights-runtime"
+
+			pom {
+				name.set(Constants.PRETTY_NAME)
+				description.set(Constants.DESCRIPTION)
+			}
+		}
+	}
+}

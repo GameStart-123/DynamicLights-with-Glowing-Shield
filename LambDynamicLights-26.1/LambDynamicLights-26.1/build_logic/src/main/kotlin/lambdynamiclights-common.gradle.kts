@@ -1,0 +1,57 @@
+import dev.lambdaurora.mcdev.api.McVersionLookup
+import lambdynamiclights.Constants
+import lambdynamiclights.LambDynamicLightsExt
+import org.gradle.accessors.dm.LibrariesForLibs
+
+plugins {
+	id("net.fabricmc.fabric-loom")
+	id("dev.lambdaurora.mcdev")
+}
+
+// Seriously you should not worry about it, definitely not a hack.
+// https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
+val libs = the<LibrariesForLibs>()
+Constants.finalizeInit(libs)
+
+val ldl = project.extensions
+	.create("ldl", LambDynamicLightsExt::class, project, libs)
+
+version = "${ldl.version()}+${McVersionLookup.getVersionTag(ldl.mcVersion())}"
+lambdamcdev.namespace = Constants.NAMESPACE
+val javaVersion = Integer.parseInt(project.property("java_version").toString())
+
+repositories {
+	mavenCentral()
+	maven {
+		name = "Gegy"
+		url = uri("https://maven.gegy.dev")
+		content {
+			includeGroupAndSubgroups("dev.lambdaurora")
+			includeGroup("io.github.queerbric")
+		}
+	}
+}
+
+dependencies {
+	minecraft(libs.minecraft)
+}
+
+java {
+	sourceCompatibility = JavaVersion.toVersion(javaVersion)
+	targetCompatibility = JavaVersion.toVersion(javaVersion)
+
+	withSourcesJar()
+}
+
+tasks.withType<JavaCompile>().configureEach {
+	options.encoding = "UTF-8"
+
+	options.release.set(javaVersion)
+}
+
+loom {
+	@Suppress("UnstableApiUsage")
+	mixin {
+		useLegacyMixinAp = false
+	}
+}

@@ -1,0 +1,74 @@
+import lambdynamiclights.Constants
+
+plugins {
+	id("lambdynamiclights")
+}
+
+val prettyName = "${Constants.PRETTY_NAME} (API)"
+
+base.archivesName.set(Constants.NAME + "-api")
+
+dependencies {
+	api(libs.yumi.commons.event) {
+		// Exclude Minecraft and loader-provided libraries.
+		exclude(group = "org.slf4j")
+		exclude(group = "org.ow2.asm")
+	}
+
+	include(libs.yumi.commons.core)
+	include(libs.yumi.commons.collections)
+	include(libs.yumi.commons.event)
+}
+
+lambdamcdev {
+	namespace = Constants.NAMESPACE + "_api"
+
+	manifests {
+		val fmj = fmj {
+			withNamespace(Constants.NAMESPACE + "_api")
+				.withName(prettyName)
+				.withDescription(Constants.API_DESCRIPTION)
+				.withModMenu {
+					it.withBadges("library")
+						.withParent(Constants.NAMESPACE, Constants.PRETTY_NAME) { parent ->
+							parent.withDescription(Constants.DESCRIPTION)
+								.withIcon("assets/${Constants.NAMESPACE}/icon.png")
+						}
+				}
+		}
+
+		nmt {
+			fmj.copyTo(this)
+			withLoaderVersion("[2,)")
+			withDepend("minecraft", project.property("neoforge_mc_constraints").toString())
+		}
+
+		fmj {
+			withDepend("yumi-commons-core", "^${libs.versions.yumi.commons.get()}")
+			withDepend("yumi-commons-collections", "^${libs.versions.yumi.commons.get()}")
+			withDepend("yumi-commons-event", "^${libs.versions.yumi.commons.get()}")
+		}
+	}
+
+	setupJarJarCompat()
+}
+
+tasks.runClient {
+	this.enabled = false
+}
+
+// Configure the maven publication.
+publishing {
+	publications {
+		create<MavenPublication>("mavenJava") {
+			from(components["java"])
+
+			artifactId = Constants.API_ARTIFACT
+
+			pom {
+				name.set(prettyName)
+				description.set(Constants.API_DESCRIPTION)
+			}
+		}
+	}
+}
